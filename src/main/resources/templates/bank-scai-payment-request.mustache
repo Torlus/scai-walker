@@ -1,0 +1,13 @@
+<h1>Customer Bank - SCAI Payment Request</h1>
+<form action="/scai/payment-request-ui" method="get">
+  Your name: {{ name }}<br />
+  <br />
+  Payment request issuer name: {{ remote_name }}<br />
+  Transaction ID: {{ id }}<br />
+  Amount: {{ amount }}<br />
+  <br />
+  {{ #validated }}
+  <input type="submit" name="accept" value="Accept" />
+  <input type="submit" name="decline" value="Decline" />
+  {{ /validated }}
+</form>

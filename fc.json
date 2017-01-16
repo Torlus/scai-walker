@@ -1,0 +1,53 @@
+{
+ "issuer": "https://fcp.integ01.dev-franceconnect.fr",
+ "authorization_endpoint": "https://fcp.integ01.dev-franceconnect.fr/api/v1/authorize",
+ "token_endpoint": "https://fcp.integ01.dev-franceconnect.fr/api/v1/token",
+ "userinfo_endpoint": "https://fcp.integ01.dev-franceconnect.fr/api/v1/userinfo",
+ "end_session_endpoint": "https://fcp.integ01.dev-franceconnect.fr/api/v1/logout",
+ "jwks_uri":"http://non_necessaire_pour_fc_mais_obligatoire_dapres_la_spec_oidc",
+ "response_types_supported": [
+  "code",
+  "token",
+  "id_token",
+  "none"
+ ],
+ "subject_types_supported": [
+  "public"
+ ],
+ "id_token_signing_alg_values_supported": [
+  "HS256"
+ ],
+ "scopes_supported": [
+  "openid",
+  "email",
+  "birth",
+  "profile"
+ ],
+ "token_endpoint_auth_methods_supported": [
+  "client_secret_post"
+ ],
+ "claims_supported": [
+  "aud",
+  "email",
+  "email_verified",
+  "exp",
+  "family_name",
+  "given_name",
+  "iat",
+  "iss",
+  "locale",
+  "name",
+  "phone",
+  "address",
+  "birthcountry",
+  "birthplace",
+  "gender",
+  "preferred_username",
+  "sub"
+ ],
+ "code_challenge_methods_supported": [
+  "plain",
+  "S256"
+ ]
+}
+

@@ -1,3 +1,7 @@
-.DS_Store
+/src/main/java/com/torlus/scai/walker/Credentials.java
+.*
 SECRET.md
 
+/bin/
+/classes/
+/target/
