@@ -3,6 +3,7 @@ package com.torlus.scai.walker;
 import static spark.Spark.before;
 import static spark.Spark.exception;
 import static spark.Spark.get;
+import static spark.Spark.post;
 import static spark.Spark.halt;
 import static spark.Spark.redirect;
 
@@ -272,7 +273,7 @@ public class Bank {
 
 
 	public void setupInbox() throws Exception {
-		get("/scai/inbox", (request, response) -> { 
+		post("/scai/inbox", (request, response) -> { 
 			String msg = request.queryParams("jwt");
 			Map<String, String> props = SCAI.verifySigner(msg, cert, logger);
 			
@@ -286,8 +287,10 @@ public class Bank {
 				target = target.substring(0, p + 1);
 			
 			Identity idn = identities.find(issuer);
-			if (idn == null || idn.private_key == null || idn.private_key.length() == 0)
-				return 400;
+			if (idn == null || idn.private_key == null || idn.private_key.length() == 0) {
+				response.status(400);
+				return null;
+			}
 			PKCS8EncodedKeySpec ksp = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(idn.private_key)); 
 			KeyFactory kf = KeyFactory.getInstance("RSA");
 			PrivateKey pk = kf.generatePrivate(ksp);
@@ -311,20 +314,25 @@ public class Bank {
 			String rbody = rjwt.substring(rjwt.indexOf('.') + 1, rjwt.lastIndexOf('.'));
 			logger.info(new String(Base64.getDecoder().decode(rbody)));
 
-			// response.cookie("/scai/", "scai-request", rjwt, 30*60, false);
-			response.redirect(target + vcls.getSubject() + "?jwt=" + rjwt);
-			return 302;
-		});
+			Map<String, String> map = new HashMap<>();
+			map.put("jwt", rjwt);
+			map.put("pp", SCAI.prettyPrint(rjwt));
+			map.put("redirect", target + vcls.getSubject());
+			return new ModelAndView(map, "redirect.mustache");
+
+		}, templateEngine);
 	}
 	
 	@SuppressWarnings({"unchecked", "restriction"})
 	public void setupPaymentRequestHandler() throws Exception {
-		get("/scai/payment-request", (request, response) -> { 
+		post("/scai/payment-request", (request, response) -> { 
 			String msg = request.queryParams("jwt");
 			response.cookie("/scai/", "scai-request", msg, 30*60, false);
-			response.redirect("/scai/payment-request-ui");
-			return 302;
-		});
+			// response.redirect("/scai/payment-request-ui");
+    		Map<String, String> map = new HashMap<>();
+			map.put("pp", SCAI.prettyPrint(msg));
+			return new ModelAndView(map, "bank-scai-payment-request-index.mustache");
+		}, templateEngine);
 		
 		addProtectedTemplateViewRoute("/scai/payment-request-ui", (id, request, response) -> {
 			String msg = request.cookie("scai-request");
@@ -380,7 +388,7 @@ public class Bank {
     		map.put("remote_name", props.get("scai_name"));
     		map.put("name", idn.name);
     		
-            byte[] inner = Base64.getDecoder().decode(props.get("scai_inner_body"));
+            byte[] inner = Base64.getDecoder().decode(SCAI.extractBody(props));
     		ObjectMapper objectMapper = new ObjectMapper();
     		Map<String, String> innerProps = objectMapper.readValue(inner, HashMap.class);
     		
@@ -415,13 +423,16 @@ public class Bank {
         		builder.claim("scai_amount", innerProps.get("scai_amount"));
         		builder.claim("scai_callback", innerProps.get("scai_callback"));
         		builder.claim("scai_status", status);    			
-    			// SCAI.embed(builder, msg);
+    			SCAI.embed(builder, msg);
     			
     			String rjwt = builder.compact();
     			String rbody = rjwt.substring(rjwt.indexOf('.') + 1, rjwt.lastIndexOf('.'));
     			logger.info(new String(Base64.getDecoder().decode(rbody)));
 
-    			response.redirect("/scai/inbox?jwt=" + rjwt);
+    			map.put("jwt", rjwt);
+    			map.put("pp", SCAI.prettyPrint(rjwt));
+    			map.put("redirect", "/scai/inbox");
+    			return new ModelAndView(map, "redirect.mustache");
     		}
     		
             return new ModelAndView(map, "bank-scai-payment-request.mustache");
@@ -430,11 +441,11 @@ public class Bank {
 
 	@SuppressWarnings("unchecked")
 	public void setupPaymentResponseHandler() throws Exception {
-		get("/scai/payment-response", (request, response) -> { 
+		post("/scai/payment-response", (request, response) -> { 
 			String msg = request.queryParams("jwt");
 			Map<String, String> props = SCAI.verifySigner(msg, cacert, logger);
 			
-            byte[] inner = Base64.getDecoder().decode(props.get("scai_inner_body"));
+            byte[] inner = Base64.getDecoder().decode(SCAI.extractBody(props));
     		ObjectMapper objectMapper = new ObjectMapper();
     		Map<String, String> innerProps = objectMapper.readValue(inner, HashMap.class);
 						
@@ -443,8 +454,10 @@ public class Bank {
 			logger.info("response: target=" + target);
 			
 			Identity idn = identities.find(target);
-			if (idn == null || idn.private_key == null || idn.private_key.length() == 0)
-				return 400;
+			if (idn == null || idn.private_key == null || idn.private_key.length() == 0) {
+				response.status(400);
+				return null;
+			}
 			PKCS8EncodedKeySpec ksp = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(idn.private_key)); 
 			KeyFactory kf = KeyFactory.getInstance("RSA");
 			PrivateKey pk = kf.generatePrivate(ksp);
@@ -470,11 +483,15 @@ public class Bank {
 			logger.info(new String(Base64.getDecoder().decode(rbody)));
 
 			// response.cookie("/scai/", "scai-request", rjwt, 30*60, false);
-			String callback = innerProps.get("scai_callback") + "?jwt=" + rjwt;
+			String callback = innerProps.get("scai_callback");
 			logger.info("redirecting to:" + callback);
-			response.redirect(callback);
-			return 302;			
-		});
+
+			Map<String, String> map = new HashMap<>();
+			map.put("jwt", rjwt);
+			map.put("pp", SCAI.prettyPrint(rjwt));
+			map.put("redirect", callback);
+			return new ModelAndView(map, "redirect.mustache");
+		}, templateEngine);
 
 	}
 }

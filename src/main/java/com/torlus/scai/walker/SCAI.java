@@ -56,9 +56,76 @@ public class SCAI {
 		body = body.substring(0, body.indexOf('.'));
 		String sig = msg.substring(msg.lastIndexOf('.') + 1);
 
-		builder.claim("scai_inner_header", hdr);
-		builder.claim("scai_inner_body", body);
-		builder.claim("scai_inner_signature", sig);
+		// builder.claim("scai_inner_header", hdr);
+		// builder.claim("scai_inner_body", body);
+		// builder.claim("scai_inner_signature", sig);
+		builder.claim("scai_inner", msg);
 	}
 	
+	public static String extractBody(Map<String,String> props) {
+		String msg = props.get("scai_inner");
+		String hdr = msg.substring(0, msg.indexOf('.'));
+		String body = msg.substring(hdr.length() + 1);
+		body = body.substring(0, body.indexOf('.'));
+		return body;
+	}
+	
+	private static void indent(StringBuilder sb, int count) {
+		while(count-- > 0)
+			sb.append("  ");
+	}
+	
+	public static String prettyPrint(String msg) throws Exception {
+		StringBuilder sb = new StringBuilder();
+		prettyPrint(msg, 0, sb);
+		return sb.toString();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static void prettyPrint(String msg, int tab, StringBuilder sb) throws Exception {
+		String hdr = msg.substring(0, msg.indexOf('.'));
+		String body = msg.substring(hdr.length() + 1);
+		int n = body.indexOf('.');
+		if (n > 0)
+			body = body.substring(0, body.indexOf('.'));
+		byte hdrBytes[] = Base64.getDecoder().decode(hdr);
+		byte bodyBytes[] = Base64.getDecoder().decode(body);
+
+		Map<String,String> props = new HashMap<String, String>();
+		ObjectMapper objectMapper = new ObjectMapper();
+		props = objectMapper.readValue(hdrBytes, HashMap.class);
+
+		indent(sb, tab); sb.append("<header> {\n");
+		for(String p : props.keySet()) {
+			String v = props.get(p);
+			indent(sb, tab + 1);
+			sb.append("\"" + p + "\":\"" + v + "\",\n");
+		}
+		sb.setLength(sb.length() - 2);
+		sb.append('\n');
+		indent(sb, tab); sb.append("}\n");
+		indent(sb, tab); sb.append(".<body> {\n");
+		props = objectMapper.readValue(bodyBytes, HashMap.class);
+		boolean embed = false;
+		for(String p : props.keySet()) {
+			Object o = props.get(p);
+			String v = o.toString();
+			if (p.startsWith("scai_inner")) {
+				embed = true;
+			} else {
+				indent(sb, tab + 1);
+				sb.append("\"" + p + "\":\"" + v + "\",\n");
+			}
+		}
+		if (embed) {
+			prettyPrint(props.get("scai_inner"), tab + 1, sb);
+		} else {
+			sb.setLength(sb.length() - 2);
+			sb.append('\n');
+		}
+		indent(sb, tab); sb.append("}\n");
+		if (n > 0) {
+			indent(sb, tab); sb.append(".<signature>\n");			
+		}
+	}
 }

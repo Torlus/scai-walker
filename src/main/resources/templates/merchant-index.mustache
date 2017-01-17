@@ -1,5 +1,5 @@
 <h1>My Little Web Store - Checkout</h1>
-<form action="/scai-request" method="get">
+<form action="/scai-request" method="post">
   Transaction ID: {{ id }}<input name="scai_id" type="hidden" value="{{ id }}" /><br />
   Amount: <input name="scai_amount" type="text" value="19.73" /><br />
   Your online banking SCAI endpoint:<input name="scai_endpoint" type="text" value="{{ latest }}" /><br />

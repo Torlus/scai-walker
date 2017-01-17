@@ -28,6 +28,7 @@ import spark.template.mustache.MustacheTemplateEngine;
 
 import static spark.Spark.exception;
 import static spark.Spark.get;
+import static spark.Spark.post;
 
 
 public class MerchantSite {
@@ -62,7 +63,7 @@ public class MerchantSite {
 			return new ModelAndView(map, "merchant-index.mustache");
 		}, templateEngine);
 		
-		get("/scai-request", (req, res) -> {
+		post("/scai-request", (req, res) -> {
 			String remote = req.queryParams("scai_endpoint");
 			String id = req.queryParams("scai_id");
 			Date now = new Date();
@@ -72,7 +73,6 @@ public class MerchantSite {
 					.setIssuedAt(now)
 					.setSubject("payment-request")
 					.setAudience(remote)
-					.setId(id)
 					.signWith(alg, key);
 			builder.claim("scai_id", req.queryParams("scai_id"));			
 			builder.claim("scai_amount", req.queryParams("scai_amount"));
@@ -81,11 +81,14 @@ public class MerchantSite {
 			String body = jwt.substring(jwt.indexOf('.') + 1, jwt.lastIndexOf('.'));
 			logger.info(new String(Base64.getDecoder().decode(body)));
 
-			res.redirect(endpoint + "inbox?jwt=" + jwt);
-			return 302;
-		});
+			Map<String, String> map = new HashMap<>();
+			map.put("jwt", jwt);
+			map.put("pp", SCAI.prettyPrint(jwt));
+			map.put("redirect", endpoint + "inbox");
+			return new ModelAndView(map, "redirect.mustache");
+		}, templateEngine);
 		
-		get("/scai-response", (request, response) -> {
+		post("/scai-response", (request, response) -> {
 			String msg = request.queryParams("jwt");
 
 			Claims vcls = Jwts.parser().setSigningKey(key).parseClaimsJws(msg).getBody();
@@ -94,6 +97,9 @@ public class MerchantSite {
 			map.put("id", (String)vcls.get("scai_id"));
 			map.put("amount", (String)vcls.get("scai_amount"));
 			map.put("status", (String)vcls.get("scai_status"));
+			StringBuilder sb = new StringBuilder();
+			SCAI.prettyPrint(msg, 0, sb);
+			map.put("jwt", sb.toString());
 			return new ModelAndView(map, "merchant-callback.mustache");
 		}, templateEngine);
 		

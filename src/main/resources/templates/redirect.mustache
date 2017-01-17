@@ -1,0 +1,11 @@
+<h1>Redirecting to {{ redirect }}</h1>
+<form action="{{ redirect }}" method="post">
+  <input type="hidden" name="jwt" value="{{ jwt }}" />
+  <input type="submit" name="next" value="Next" />
+</form>
+<br />
+<hr />
+<pre><code>
+{{ pp }}
+</code></pre>
+<hr /><br />
