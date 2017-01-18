@@ -18,8 +18,26 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.JwtBuilder;
 
-public class SCAI {
+public class ScaiTools {
 
+	private static String prettifyItem(String item) {
+		item = item.replaceAll("http://(.+):4567", "http://www.customer-bank.com");
+		item = item.replaceAll("http://(.+):4568", "http://www.merchant-bank.com");
+		item = item.replaceAll("http://(.+):4569", "http://www.mylittlewebstore.com");
+		return item;
+	}
+	
+	public static void prettify(Map<String, String> map) {
+		String redirect = map.get("redirect");
+		if (redirect != null) {
+			map.put("redirect_label", prettifyItem(redirect));
+		}
+		String pp = map.get("pp");
+		if (pp != null) {
+			map.put("pp", prettifyItem(pp));
+		}
+	}
+	
 	@SuppressWarnings("unchecked")
 	public static Map<String,String> verifySigner(String msg, Certificate signer, Logger logger) throws Exception {
 

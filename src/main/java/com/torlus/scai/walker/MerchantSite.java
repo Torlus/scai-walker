@@ -36,7 +36,7 @@ public class MerchantSite {
 	private static final Logger logger = LoggerFactory.getLogger(Bank.class);
 
 	private static final MustacheTemplateEngine templateEngine = new MustacheTemplateEngine();
-
+	
 	public static void main(String args[]) throws Exception {
 		final int port = 4569;
 		port(port);
@@ -56,8 +56,10 @@ public class MerchantSite {
 		
 		get("/", (req, res) -> {
 			Map<String, String> map = new HashMap<>();
+			map.put("location", "Merchant's Website");
 			map.put("timestamp", new Date().toString());
 			map.put("id", UUID.randomUUID().toString());
+			map.put("amount", "19.73");
 			map.put("latest", "http://localhost:4567/scai/");
 			map.put("callback", "http://localhost:" + port + "/scai-response");
 			return new ModelAndView(map, "merchant-index.mustache");
@@ -82,9 +84,11 @@ public class MerchantSite {
 			logger.info(new String(Base64.getDecoder().decode(body)));
 
 			Map<String, String> map = new HashMap<>();
+			map.put("location", "Merchant's Website");
 			map.put("jwt", jwt);
-			map.put("pp", SCAI.prettyPrint(jwt));
+			map.put("pp", ScaiTools.prettyPrint(jwt));
 			map.put("redirect", endpoint + "inbox");
+			ScaiTools.prettify(map);
 			return new ModelAndView(map, "redirect.mustache");
 		}, templateEngine);
 		
@@ -94,12 +98,13 @@ public class MerchantSite {
 			Claims vcls = Jwts.parser().setSigningKey(key).parseClaimsJws(msg).getBody();
 			logger.info("verifiedClaims:" + vcls.toString());
 			Map<String, String> map = new HashMap<>();
+			map.put("location", "Merchant's Website");
+			map.put("jwt", msg);
+			map.put("pp", ScaiTools.prettyPrint(msg));
 			map.put("id", (String)vcls.get("scai_id"));
 			map.put("amount", (String)vcls.get("scai_amount"));
 			map.put("status", (String)vcls.get("scai_status"));
-			StringBuilder sb = new StringBuilder();
-			SCAI.prettyPrint(msg, 0, sb);
-			map.put("jwt", sb.toString());
+			ScaiTools.prettify(map);
 			return new ModelAndView(map, "merchant-callback.mustache");
 		}, templateEngine);
 		

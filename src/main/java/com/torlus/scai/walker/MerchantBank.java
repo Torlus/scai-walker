@@ -24,6 +24,8 @@ public class MerchantBank extends Bank {
 		final int port = 4568;
 
 		MerchantBank bank = new MerchantBank(port, "localhost");
+		bank.setLabel("Merchant Bank");
+		
 		try {
 			bank.setupCerts("merchant-bank");
 			bank.setupInbox();

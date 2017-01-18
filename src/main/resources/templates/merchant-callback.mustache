@@ -1,9 +1,66 @@
-<h1>My Little Web Store - Callback</h1>
-  Transaction ID: {{ id }}<br />
-  Amount: {{ amount }}<br />
-  Status: {{ status }}<br />
-<hr />
-Final JWT:<br />
-<pre><code>
-{{ jwt }}
-</code></pre>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+  <style>
+  .bg-m {
+    background-color: #aaaaff;
+  }
+  </style>
+</head>
+<body class="bg-m">
+
+  <nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <a class="navbar-brand" href="#">Current location: <b>{{ location }}</b></a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container" role="main">
+    <div class="jumbotron">
+      <h1>My Little Web Store</h1>
+      <form class="form-horizontal" role="form">
+        <h2>Payment Request Callback</h2>
+        <div class="form-group">
+          <label for="scai_id" class="col-sm-3 control-label">Transaction Identifier</label>
+          <div class="col-sm-9">
+            <input type="text" id="scai_id" placeholder="Transaction ID" class="form-control" value="{{ id }}" readOnly>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="scai_amount" class="col-sm-3 control-label">Amount</label>
+          <div class="col-sm-9">
+            <input type="text" id="scai_amount" placeholder="Amount" class="form-control" value="{{ amount }}" readOnly>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="scai_status" class="col-sm-3 control-label">Status</label>
+          <div class="col-sm-9">
+            <input type="text" id="scai_status" placeholder="Status" class="form-control" value="{{ status }}" readOnly>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="well">
+      Final JWT
+      <pre><code>
+{{ pp }}
+      </code></pre>
+    </div>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+</body>
+</html>

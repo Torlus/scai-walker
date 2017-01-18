@@ -48,6 +48,7 @@ public class CustomerBank extends Bank {
 		// port(port);
 
 		CustomerBank bank = new CustomerBank(port, "localhost");
+		bank.setLabel("Customer Bank");
 
 		OidcConfiguration oidcConf = new OidcConfiguration();
 		oidcConf.setClientId(Credentials.GOOGLE_CLIENT_ID);

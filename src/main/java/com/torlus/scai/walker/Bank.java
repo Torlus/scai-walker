@@ -247,6 +247,12 @@ public class Bank {
 	protected Certificate cert;
 	protected RSAPrivateCrtKey key;
 	
+	protected String location;
+	
+	public void setLabel(String label) {
+		location = label;
+	}
+	
 	public void setupCerts(String keystore) throws Exception {
 		KeyStore caks = KeyStore.getInstance("JKS");
 		caks.load(new FileInputStream(new File("ca.jks")), "scai".toCharArray());
@@ -275,7 +281,7 @@ public class Bank {
 	public void setupInbox() throws Exception {
 		post("/scai/inbox", (request, response) -> { 
 			String msg = request.queryParams("jwt");
-			Map<String, String> props = SCAI.verifySigner(msg, cert, logger);
+			Map<String, String> props = ScaiTools.verifySigner(msg, cert, logger);
 			
 			String issuer = props.get("iss");
 			logger.info("iss:" + issuer);
@@ -308,16 +314,18 @@ public class Bank {
 					.setAudience(vcls.getAudience())
 					.signWith(alg, key);
 			builder.claim("scai_name", idn.name);
-			SCAI.embed(builder, msg);
+			ScaiTools.embed(builder, msg);
 			
 			String rjwt = builder.compact();
 			String rbody = rjwt.substring(rjwt.indexOf('.') + 1, rjwt.lastIndexOf('.'));
 			logger.info(new String(Base64.getDecoder().decode(rbody)));
 
 			Map<String, String> map = new HashMap<>();
+			map.put("location", location);
 			map.put("jwt", rjwt);
-			map.put("pp", SCAI.prettyPrint(rjwt));
+			map.put("pp", ScaiTools.prettyPrint(rjwt));
 			map.put("redirect", target + vcls.getSubject());
+			ScaiTools.prettify(map);
 			return new ModelAndView(map, "redirect.mustache");
 
 		}, templateEngine);
@@ -330,14 +338,16 @@ public class Bank {
 			response.cookie("/scai/", "scai-request", msg, 30*60, false);
 			// response.redirect("/scai/payment-request-ui");
     		Map<String, String> map = new HashMap<>();
-			map.put("pp", SCAI.prettyPrint(msg));
+    		map.put("location", location);
+    		map.put("pp", ScaiTools.prettyPrint(msg));
+    		ScaiTools.prettify(map);
 			return new ModelAndView(map, "bank-scai-payment-request-index.mustache");
 		}, templateEngine);
 		
 		addProtectedTemplateViewRoute("/scai/payment-request-ui", (id, request, response) -> {
 			String msg = request.cookie("scai-request");
 			logger.info("cookie=" + msg);
-			Map<String, String> props = SCAI.verifySigner(msg, cacert, logger);
+			Map<String, String> props = ScaiTools.verifySigner(msg, cacert, logger);
 			
 			boolean generate = false;
 			Identity idn = identities.find(id);
@@ -385,10 +395,11 @@ public class Bank {
 	            identities.save();
             }
     		Map<String, String> map = new HashMap<>();
+    		map.put("location", location);
     		map.put("remote_name", props.get("scai_name"));
     		map.put("name", idn.name);
     		
-            byte[] inner = Base64.getDecoder().decode(SCAI.extractBody(props));
+            byte[] inner = Base64.getDecoder().decode(ScaiTools.extractBody(props));
     		ObjectMapper objectMapper = new ObjectMapper();
     		Map<String, String> innerProps = objectMapper.readValue(inner, HashMap.class);
     		
@@ -423,18 +434,19 @@ public class Bank {
         		builder.claim("scai_amount", innerProps.get("scai_amount"));
         		builder.claim("scai_callback", innerProps.get("scai_callback"));
         		builder.claim("scai_status", status);    			
-    			SCAI.embed(builder, msg);
+    			ScaiTools.embed(builder, msg);
     			
     			String rjwt = builder.compact();
     			String rbody = rjwt.substring(rjwt.indexOf('.') + 1, rjwt.lastIndexOf('.'));
     			logger.info(new String(Base64.getDecoder().decode(rbody)));
 
     			map.put("jwt", rjwt);
-    			map.put("pp", SCAI.prettyPrint(rjwt));
+    			map.put("pp", ScaiTools.prettyPrint(rjwt));
     			map.put("redirect", "/scai/inbox");
+    			ScaiTools.prettify(map);
     			return new ModelAndView(map, "redirect.mustache");
     		}
-    		
+    		ScaiTools.prettify(map);
             return new ModelAndView(map, "bank-scai-payment-request.mustache");
 		}, templateEngine);		
 	}
@@ -443,9 +455,9 @@ public class Bank {
 	public void setupPaymentResponseHandler() throws Exception {
 		post("/scai/payment-response", (request, response) -> { 
 			String msg = request.queryParams("jwt");
-			Map<String, String> props = SCAI.verifySigner(msg, cacert, logger);
+			Map<String, String> props = ScaiTools.verifySigner(msg, cacert, logger);
 			
-            byte[] inner = Base64.getDecoder().decode(SCAI.extractBody(props));
+            byte[] inner = Base64.getDecoder().decode(ScaiTools.extractBody(props));
     		ObjectMapper objectMapper = new ObjectMapper();
     		Map<String, String> innerProps = objectMapper.readValue(inner, HashMap.class);
 						
@@ -476,7 +488,7 @@ public class Bank {
     		builder.claim("scai_amount", innerProps.get("scai_amount"));
     		builder.claim("scai_callback", innerProps.get("scai_callback"));
     		builder.claim("scai_status", innerProps.get("scai_status"));
-			SCAI.embed(builder, msg);
+			ScaiTools.embed(builder, msg);
 			
 			String rjwt = builder.compact();
 			String rbody = rjwt.substring(rjwt.indexOf('.') + 1, rjwt.lastIndexOf('.'));
@@ -487,9 +499,11 @@ public class Bank {
 			logger.info("redirecting to:" + callback);
 
 			Map<String, String> map = new HashMap<>();
+			map.put("location", location);
 			map.put("jwt", rjwt);
-			map.put("pp", SCAI.prettyPrint(rjwt));
+			map.put("pp", ScaiTools.prettyPrint(rjwt));
 			map.put("redirect", callback);
+			ScaiTools.prettify(map);
 			return new ModelAndView(map, "redirect.mustache");
 		}, templateEngine);
 
